@@ -4,7 +4,7 @@ Members: Justin Norman, Dylan Chow, Elaine Wang, Hongyang Zheng, Nidhi Kakulawar
 
 [Description by @DylanChow]
 
-## Instructions to build, run test
+## Instructions to build, run, test
 
 * Build: Dockerfile and /.dockerignore have all libraries and packages necessary to run the server in a container environment.  Use ```./build_db.sh``` to run the build script 
 * Run: 
