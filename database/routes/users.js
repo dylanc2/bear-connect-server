@@ -3,18 +3,24 @@ let User = require("../models/userModel"); // mongoose model
 
 // CREATE
 router.route("/add").post((req, res) => {
+  const _id = req.body._id
   const name = req.body.name;
   const year = req.body.year;
   const major = req.body.major;
-  const classes = req.body.classes;
+  const selectedClass = req.body.selectedClass;
+  const studyTimes = req.body.studyTimes;
   const meetingTimes = req.body.meetingTimes;
+  const studyStyle = req.body.studyStyle;
 
   const newUser = new User({
+    _id,
     name,
     year,
     major,
-    classes,
+    selectedClass,
+    studyTimes,
     meetingTimes,
+    studyStyle
   });
 
   newUser.save()
@@ -41,9 +47,11 @@ router.route("/:id").put((req, res) => {
     .then((user) => {
       user.name = req.body.name || user.name;
       user.year = req.body.year || user.year;
-      user.classes = req.body.classes || user.classes;
+      user.selectedClass = req.body.selectedClass || user.selectedClass;
       user.major = req.body.major || user.major;
       user.meetingTimes = req.body.meetingTimes || user.meetingTimes;
+      user.studyTimes = req.body.studyTimes || user.studyTimes;
+      user.studyStyle = req.body.studyStyle || user.studyStyle;
 
       user.save()
         .then(() => res.json("User updated!"))

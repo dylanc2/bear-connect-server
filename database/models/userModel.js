@@ -4,11 +4,14 @@ const Schema = mongoose.Schema;
 
 const userSchema = new Schema(
   {
+    _id: { type: String, required: true },
     name: { type: String, required: true },
     year: { type: String, required: true },
     major: { type: String, required: true },
-    classes: { type: String, required: true },
-    meetingTimes: { type: [String], required: true },
+    selectedClass: { type: String, required: true },
+    studyTimes: { type: String, required: true },
+    meetingTimes: { type: String, required: true },
+    studyStyle: { type: String, required: true }
   },
   {
     timestamps: true, // create timestamp fields
