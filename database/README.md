@@ -24,5 +24,5 @@ Members: Justin Norman, Dylan Chow, Elaine Wang, Hongyang Zheng, Nidhi Kakulawar
     "studyTime": " early_bird",
     "meetingTimes": "weekdays",
     "studyStyle": "debugging master"
-}
-```
+    }
+    ```
