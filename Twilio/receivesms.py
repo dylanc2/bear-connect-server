@@ -10,7 +10,7 @@ import json
 # account_sid = 'AC5f64d1e6b804bf55ed3125b84f93fa2b'
 # auth_token = 'cee5beca64a486de2b082834546dcd01'
 # client = Client(account_sid, auth_token)
-SECRET_KEY = 'a secret key22'
+SECRET_KEY = str(uuid.uuid1())
 app = Flask(__name__)
 app.config.from_object(__name__)
 
@@ -19,6 +19,7 @@ app.config.from_object(__name__)
 #ngrok http 5000
 
 ppl_dict = {}
+ppl_dict["_id"] = SECRET_KEY
 groups = []
 
 #print (uuid.uuid1())
@@ -37,26 +38,25 @@ def sms_reply():
 
     if counter == 1:
         resp.message("Thank you for choosing Bear Connect! What is your name?")
-        ppl_dict["_id"] = str(uuid.uuid1())
+        # ppl_dict["_id"] = str(uuid.uuid1())
 
     elif counter == 2:
         name = request.form['Body']
-        ppl_dict['name'] = name.lower()
+        ppl_dict["name"] = str(name.lower())
         message = 'Hi {}, what is your major? (e.g. cs, ds, eecs)'.format(name)
         resp.message(message)
 
     elif counter == 3:
         major = request.form['Body']
         resp.message("What class/Department would you like to find a study group for? (e.g. reply CS61B or INFO253B)")
-        ppl_dict['major'] = major.lower().replace(" ", "")
+        ppl_dict["major"] = str(major.lower())
 
     elif counter == 4:
         class_dept = request.form['Body']
-        ppl_dict['selectedClass'] = class_dept.lower()
+        ppl_dict["selectedClass"] = str(class_dept.lower().replace(" ", ""))
         resp.message("What year are you? (e.g. Freshman, Sophomore, Junior, Senior, Graduate, Other)")
 
     elif counter == 5:
-
         year = request.form['Body']
         loweredYear = year.lower()
         validYears = ['freshman', 'sophomore', 'junior', 'senior', 'graduate', 'other']
@@ -65,16 +65,16 @@ def sms_reply():
             session['counter'] = counter
             resp.message('Input is invalid. What year are you? (e.g. Freshman, Sophomore, Junior, Senior, Graduate, Other)')
             return str(resp)
-        ppl_dict['year'] = loweredYear
+        ppl_dict["year"] = str(loweredYear)
         message = 'Are you an early bird or night owl? Reply 1 for early bird, 2 for night owl'
         resp.message(message)
 
     elif counter == 6:
         study_time  = request.form['Body']
         if study_time == '1':
-            ppl_dict['studyTimes'] = 'early_bird'
+            ppl_dict["studyTimes"] = "early_bird"
         elif study_time == '2':
-            ppl_dict['studyTimes'] = 'night_owl'
+            ppl_dict["studyTimes"] = "night_owl"
         else:
             counter = 5
             session['counter'] = counter
@@ -82,12 +82,13 @@ def sms_reply():
             return str(resp)
         message = 'Do you normally study on weekends or during weekdays? Reply 1 for weekends, 2 for weekdays'
         resp.message(message)
+
     elif counter == 7:
         meetingTimes = request.form['Body']
         if meetingTimes == '1':
-            ppl_dict['meetingTimes'] = 'weekends'
+            ppl_dict["meetingTimes"] = "weekends"
         elif meetingTimes == '2':
-            ppl_dict['meetingTimes'] = 'weekdays'
+            ppl_dict["meetingTimes"] = "weekdays"
         else:
             counter = 6
             session['counter'] = counter
@@ -95,35 +96,35 @@ def sms_reply():
             return str(resp)
         message = 'Which of the following best describe your study style? \n Reply 1 - Debugging Master  \n Reply 2 - Clubhouse Activists \n Reply 3 - Piazza Frontsitter \n Reply 4 - Visualization Guru'
         resp.message(message)
+
     elif counter == 8:
         studyStyle = request.form['Body']
         if studyStyle == '1':
-            ppl_dict['studyStyle'] = 'debugging master'
+            ppl_dict["studyStyle"] = "debugging master"
         elif studyStyle == '2':
-            ppl_dict['studyStyle'] = 'clubhouse activists'
+            ppl_dict["studyStyle"] = "clubhouse activists"
         elif studyStyle == '3':
-            ppl_dict['studyStyle'] = 'piazza frontsitter'
+            ppl_dict["studyStyle"] = "piazza frontsitter"
         elif studyStyle == '4':
-            ppl_dict['studyStyle'] = 'visualization guru'
+            ppl_dict["studyStyle"] = "visualization guru"
         else:
             counter = 7
             session['counter'] = counter
             resp.message('Input is invalid. Which of the following best describe your study style? \n Reply 1 - Debugging Master  \n Reply 2 - Clubhouse Activists \n Reply 3 - Piazza Frontsitter \n Reply 4 - Visualization Guru')
             return str(resp)
 
-#relative logic
-        r = requests.post(url='http://localhost:5001/users/add', json=json.dumps(ppl_dict))
+        r = requests.post(url='http://localhost:5001/users/add', json=ppl_dict)
         print(r.status_code)
         print(r.reason)
         resp.message('Awesome! Send any text to continue and then please wait a moment for results')
 
 #display group choices or return a new group
     elif counter == 9:
-        r = requests.get(url='http://localhost:5001/groups/bestMatches', params=ppl_dict['_id'])
+        r = requests.get(url='http://localhost:5001/groups/bestMatches', params=ppl_dict["_id"])
         data = r.json()
         groups = data['groups']
         # if len(data['groups']) == 0:
-            # r = requests.post(url='http://localhost:5001/groups/startNew', json=json.dumps({"members": }))
+            # r = requests.post(url='http://localhost:5001/groups/startNew', json={"members": })
             # discordURL = r.json()['discordLink']
             # resp.message('Ok, we created a new channel for ya! Here is the url: ' + discordURL + 'Feel free to invite others to discuss the topic on your mind!')
 
@@ -137,19 +138,19 @@ def sms_reply():
         groupChoice = request.form['Body']
         if groupChoice == '1':
             urlID = 'http://localhost:5001/groups/' + groups[0]['groupID']
-            r = requests.put(url=urlID, json = json.dumps({"userID":ppl_dict["id"]}))
+            r = requests.put(url=urlID, json = {"userID":ppl_dict["id"]})
             discordURL = r.json()['discordLink']
             resp.message("Done! You may now find your new group at " + discordURL )
 
         elif groupChoice == '2':
             urlID = 'http://localhost:5001/groups/' + groups[0]['groupID']
-            r = requests.put(url=urlID, json = json.dumps({"userID":ppl_dict["id"]}))
+            r = requests.put(url=urlID, json = {"userID":ppl_dict["id"]})
             discordURL = r.json()['discordLink']
             resp.message("Done! You may now find your new group at " + discordURL )
 
         elif groupChoice == '3':
             urlID = 'http://localhost:5001/groups/' + groups[0]['groupID']
-            r = requests.put(url=urlID, json = json.dumps({"userID":ppl_dict["id"]}))
+            r = requests.put(url=urlID, json = {"userID":ppl_dict["id"]})
             discordURL = r.json()['discordLink']
             resp.message("Done! You may now find your new group at " + discordURL )
 
