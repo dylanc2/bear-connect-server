@@ -1,5 +1,6 @@
 const router = require("express").Router();
 let Group = require("../models/groupModel");
+let User = require("../models/userModel");
 
 // CREATE
 router.route("/add").post((req, res) => {
@@ -15,7 +16,8 @@ router.route("/add").post((req, res) => {
     className,
   });
 
-  newGroup.save()
+  newGroup
+    .save()
     .then(() => res.json("Group added!"))
     .catch((err) => res.status(400).json("Error: " + err));
 });
@@ -42,7 +44,8 @@ router.route("/:id").put((req, res) => {
       group.sizeLimit = Number(req.body.sizeLimit) || group.sizeLimit;
       group.className = req.body.className || group.className;
 
-      group.save()
+      group
+        .save()
         .then(() => res.json("Group updated!"))
         .catch((err) => res.status(400).json("Error: " + err));
     })
@@ -54,6 +57,73 @@ router.route("/:id").delete((req, res) => {
   Group.findByIdAndDelete(req.params.id)
     .then(() => res.json("Group deleted."))
     .catch((err) => res.status(400).json("Error: " + err));
+});
+
+// Best groups
+router.route("/bestGroups/:id").get(async (req, res) => {
+  const user = await User.findById(req.params.id);
+  const groups = await Group.find({ className: user.selectedClass });
+
+  let groupData = [];
+  groups.forEach((group) => {
+    groupProps = {'_id': null, 'names': [], 'years': [], 'majors': [], 'meetingTimes': [], 'studyTimes': [], 'studyStyles': []};
+    group.members.forEach((member) => {
+      groupProps['names'].push(member.name);
+      groupProps['years'].push(member.year);
+      groupProps['majors'].push(member.major);
+      groupProps['meetingTimes'].push(member.meetingTimes);
+      groupProps['studyTimes'].push(member.studyTimes);
+      groupProps['studyStyles'].push(member.studyStyle);
+    });
+    groupProps['_id'] = group._id;
+    groupData.push(groupProps);
+    groupProps = {'years': [], 'majors': [], 'meetingTimes': [], 'studyTimes': [], 'studyStyles': []};
+  });
+
+  let ranks = {};
+  let w = {'1': 3, '2': 1, '3': 1, '4': 1, '5': 1}
+  let yearToInt = {'freshman': 1, 'sophomore': 2, 'junior': 3, 'senior': 4, "master's": 5, "phd": 6}
+  groupData.forEach((group) => {
+    let [yearFeature, majorFeature, meetingTimesFeature, studyTimesFeature, studyStyleFeature] = Array(5).fill(0);
+
+    yearNums = group.years.map(x => yearToInt[x]);
+    let avgYear = Object.values(yearNums).reduce((a, b) => a + b) / 2;
+    // console.log(yearNums);
+    // console.log(avgYear);
+    // console.log(yearToInt[user.year]);
+
+    if (Math.abs(avgYear - yearToInt[user.year]) <= 1) {
+      yearFeature = 1;
+    };
+    if (group.majors.includes(user.major)) {
+      majorFeature = 1;
+    };
+    if (group.meetingTimes.includes(user.meetingTimes)) {
+      meetingTimesFeature = 1;
+    };
+    if (group.studyTimes.includes(user.studyTimes)) {
+      studyTimesFeature = 1;
+    };
+    if (group.studyStyles.includes(user.studyStyle)) {
+      studyStyleFeature = 1;
+    };
+
+    let score = w[1] * yearFeature + w[2] * majorFeature + w[3] * meetingTimesFeature + w[4] * studyTimesFeature + w[5] * studyStyleFeature
+    ranks[group._id] = score
+  });
+
+  rankedGroupKeys = Object.keys(ranks).sort().reverse()
+
+  bestGroups = [];
+  rankedGroupKeys.forEach((id) => {
+    groups.forEach((group) => {
+      if (group._id == id) {
+        bestGroups.push(group);
+      };
+    });
+  });
+  
+  res.json(bestGroups);
 });
 
 module.exports = router;
