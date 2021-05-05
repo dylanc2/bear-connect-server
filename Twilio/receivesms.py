@@ -27,6 +27,7 @@ groups = []
 @app.route("/sms", methods=['GET', 'POST'])
 def sms_reply():
     # Increment the counter
+    global groups, ppl_dict
     counter = session.get('counter', 0)
     counter += 1
     print('counter')
@@ -43,7 +44,7 @@ def sms_reply():
     elif counter == 2:
         name = request.form['Body']
         ppl_dict["name"] = str(name.lower())
-        message = 'Hi {}, what is your major? (e.g. cs, ds, eecs, mims)'.format(name)
+        message = 'Hi {}, what is your major? (e.g. cs, ds, eecs, mims, mids)'.format(name)
         resp.message(message)
 
     elif counter == 3:
@@ -54,16 +55,16 @@ def sms_reply():
     elif counter == 4:
         class_dept = request.form['Body']
         ppl_dict["selectedClass"] = str(class_dept.lower().replace(" ", ""))
-        resp.message("What year are you? (e.g. Freshman, Sophomore, Junior, Senior, Graduate, Other)")
+        resp.message("What year are you? (e.g. Freshman, Sophomore, Junior, Senior, Master\'s, PhD)")
 
     elif counter == 5:
         year = request.form['Body']
         loweredYear = year.lower()
-        validYears = ['freshman', 'sophomore', 'junior', 'senior', 'graduate', 'other']
+        validYears = ['freshman', 'sophomore', 'junior', 'senior', 'master\'s', 'phd']
         if loweredYear not in validYears:
             counter = 4
             session['counter'] = counter
-            resp.message('Input is invalid. What year are you? (e.g. Freshman, Sophomore, Junior, Senior, Graduate, Other)')
+            resp.message('Input is invalid. What year are you? (e.g. Freshman, Sophomore, Junior, Senior, Master\'s, PhD)')
             return str(resp)
         ppl_dict["year"] = str(loweredYear)
         message = 'Are you an early bird or night owl? Reply 1 for early bird, 2 for night owl'
@@ -125,23 +126,26 @@ def sms_reply():
 
         # TODO: check if assigning global
         groups = r.json()
-        # if len(data['groups']) == 0:
-            # r = requests.post(url='http://localhost:5001/groups/startNew', json={"members": })
-            # discordURL = r.json()['discordLink']
-            # resp.message('Ok, we created a new channel for ya! Here is the url: ' + discordURL + 'Feel free to invite others to discuss the topic on your mind!')
+        if len(groups) == 0:
+            newGroupData = {"members": [ppl_dict], "open": True, "sizeLimit": "3", "className": ppl_dict["selectedClass"]}
+            print("got here")
+            r = requests.post(url='http://localhost:5001/groups/add', json=newGroupData)
+            discordURL = r.json()['discordLink']
+            resp.message('Ok, we created a new channel for ya! Here is the url: ' + discordURL + 'Feel free to invite others to discuss the topic on your mind!')
 
         # TODO: format output strings displaying group choices
         for i in range(len(groups)):
             group = groups[i]
             print(i)
             print(group)
+        resp.message("1 2 3")
 
 #a group chosen
     elif counter == 10:
         groupChoice = request.form['Body']
         groupNum = int(groupChoice) - 1
-        urlID = 'http://localhost:5001/groups/' + groups[groupNum]['_id']
-        r = requests.put(url=urlID, json = {"userID":ppl_dict["id"]})
+        urlID = 'http://localhost:5001/groups/addUser/' + groups[groupNum]['_id']
+        r = requests.put(url=urlID, json = {"user":ppl_dict})
         discordURL = r.json()['discordLink']
         resp.message("Done! You may now find your new group at " + discordURL )
 
