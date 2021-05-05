@@ -1,4 +1,5 @@
 const router = require("express").Router();
+const axios = require('axios');
 let Group = require("../models/groupModel");
 let User = require("../models/userModel");
 
@@ -9,17 +10,33 @@ router.route("/add").post((req, res) => {
   const sizeLimit = Number(req.body.sizeLimit);
   const className = req.body.className;
 
-  const newGroup = new Group({
+  function getDiscord(){ 
+   return axios.post('http://host.docker.internal:5003/create_channel') //depends on docker config
+     .then(response => {
+       this.response = response.data
+       return this.response.channel_invite })
+  }
+    
+  getDiscord()
+    .then(data => {
+    discordLink = data
+    console.log(discordLink);
+
+    const newGroup = new Group({
     members,
     open,
     sizeLimit,
     className,
+    discordLink
+    });
+
+
+    newGroup
+      .save()
+      .then(() => res.json("Group added!"))
+      .catch((err) => res.status(400).json("Error: " + err));
   });
 
-  newGroup
-    .save()
-    .then(() => res.json("Group added!"))
-    .catch((err) => res.status(400).json("Error: " + err));
 });
 
 // READ
