@@ -94,13 +94,12 @@ router.route("/:id").put((req, res) => {
 router.route("/addUser/:id").put((req, res) => {
   Group.findById(req.params.id)
     .then((group) => {
-      if (group.members.length == group.sizeLimit) {
+      if (group.open == false) {
         res.json("Sorry, this group is full.")
       } else {
         if (group.open) {
           group.members.push(req.body.user);
         }
-        console.log(group.members.length);
         if (group.members.length == group.sizeLimit) {
           group.open = false;
         }
@@ -123,7 +122,7 @@ router.route("/:id").delete((req, res) => {
 // Best groups
 router.route("/bestGroups/:id").get(async (req, res) => {
   const user = await User.findById(req.params.id);
-  const groups = await Group.find({ className: user.selectedClass });
+  const groups = await Group.find({ className: user.selectedClass, open: true });
 
   let groupData = [];
   groups.forEach((group) => {
@@ -158,12 +157,12 @@ router.route("/bestGroups/:id").get(async (req, res) => {
   let ranks = {};
   let w = { 1: 3, 2: 1, 3: 1, 4: 1, 5: 1 };
   let yearToInt = {
-    freshman: 1,
-    sophomore: 2,
-    junior: 3,
-    senior: 4,
+    "freshman": 1,
+    "sophomore": 2,
+    "junior": 3,
+    "senior": 4,
     "master's": 5,
-    phd: 6,
+    "phd": 6,
   };
   groupData.forEach((group) => {
     let [
