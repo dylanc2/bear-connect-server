@@ -16,12 +16,13 @@ router.route("/add").post((req, res) => {
       .post("http://host.docker.internal:5003/create_channel") //depends on docker config
       .then((response) => {
         this.response = response.data;
-        return this.response.channel_invite;
+        return this.response;
       });
   }
 
   getDiscord().then((data) => {
-    discordLink = data;
+    discordLink = data.channel_invite;
+    discordID   = data.channel_id;
     console.log(discordLink);
 
     const newGroup = new Group({
@@ -34,7 +35,7 @@ router.route("/add").post((req, res) => {
 
     newGroup
       .save()
-      .then(() => res.json("Group added!"))
+      .then(() => res.send({discordLink: discordLink, discordID: discordID}))
       .catch((err) => res.status(400).json("Error: " + err));
   });
 });
