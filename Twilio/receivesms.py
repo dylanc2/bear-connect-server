@@ -43,7 +43,7 @@ def sms_reply():
     elif counter == 2:
         name = request.form['Body']
         ppl_dict["name"] = str(name.lower())
-        message = 'Hi {}, what is your major? (e.g. cs, ds, eecs)'.format(name)
+        message = 'Hi {}, what is your major? (e.g. cs, ds, eecs, mims)'.format(name)
         resp.message(message)
 
     elif counter == 3:
@@ -120,39 +120,31 @@ def sms_reply():
 
 #display group choices or return a new group
     elif counter == 9:
-        r = requests.get(url='http://localhost:5001/groups/bestMatches', params=ppl_dict["_id"])
-        data = r.json()
-        groups = data['groups']
+        reqURL = 'http://localhost:5001/groups/bestGroups/' + ppl_dict['_id']
+        r = requests.get(url=reqURL)
+
+        # TODO: check if assigning global
+        groups = r.json()
         # if len(data['groups']) == 0:
             # r = requests.post(url='http://localhost:5001/groups/startNew', json={"members": })
             # discordURL = r.json()['discordLink']
             # resp.message('Ok, we created a new channel for ya! Here is the url: ' + discordURL + 'Feel free to invite others to discuss the topic on your mind!')
 
         # TODO: format output strings displaying group choices
-        group1 = groups[0]
-        group2 = groups[1]
-        group3 = groups[2]
+        for i in range(len(groups)):
+            group = groups[i]
+            print(i)
+            print(group)
 
 #a group chosen
     elif counter == 10:
         groupChoice = request.form['Body']
-        if groupChoice == '1':
-            urlID = 'http://localhost:5001/groups/' + groups[0]['groupID']
-            r = requests.put(url=urlID, json = {"userID":ppl_dict["id"]})
-            discordURL = r.json()['discordLink']
-            resp.message("Done! You may now find your new group at " + discordURL )
+        groupNum = int(groupChoice) - 1
+        urlID = 'http://localhost:5001/groups/' + groups[groupNum]['_id']
+        r = requests.put(url=urlID, json = {"userID":ppl_dict["id"]})
+        discordURL = r.json()['discordLink']
+        resp.message("Done! You may now find your new group at " + discordURL )
 
-        elif groupChoice == '2':
-            urlID = 'http://localhost:5001/groups/' + groups[0]['groupID']
-            r = requests.put(url=urlID, json = {"userID":ppl_dict["id"]})
-            discordURL = r.json()['discordLink']
-            resp.message("Done! You may now find your new group at " + discordURL )
-
-        elif groupChoice == '3':
-            urlID = 'http://localhost:5001/groups/' + groups[0]['groupID']
-            r = requests.put(url=urlID, json = {"userID":ppl_dict["id"]})
-            discordURL = r.json()['discordLink']
-            resp.message("Done! You may now find your new group at " + discordURL )
 
     print(ppl_dict)
     return str(resp)
