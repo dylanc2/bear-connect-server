@@ -6,23 +6,22 @@ import uuid
 import json
 
 
-
-# account_sid = 'AC5f64d1e6b804bf55ed3125b84f93fa2b'
-# auth_token = 'cee5beca64a486de2b082834546dcd01'
-# client = Client(account_sid, auth_token)
 SECRET_KEY = str(uuid.uuid1())
 app = Flask(__name__)
 app.config.from_object(__name__)
-
-
-#run this after launching in localhost
-#ngrok http 5000
 
 ppl_dict = {}
 ppl_dict["_id"] = SECRET_KEY
 groups = []
 
-#print (uuid.uuid1())
+def add_group(retstr, groupnum):
+    retstr = retstr + "\n\nHere is your Group " + groupnum+ " option:"
+    return retstr
+
+def add_member(retstr, membernum, name, major, year, style):
+    style = style.replace("_", " ")
+    retstr = retstr + "\n\tMember "+ membernum + "-\n\t\t Name: " + name + "\n\t\t Major: " + major + "\n\t\t Year: " + year + "\n\t\t Study Style: " + style
+    return retstr
 
 @app.route("/sms", methods=['GET', 'POST'])
 def sms_reply():
@@ -39,7 +38,6 @@ def sms_reply():
 
     if counter == 1:
         resp.message("Thank you for choosing Bear Connect! What is your name?")
-        # ppl_dict["_id"] = str(uuid.uuid1())
 
     elif counter == 2:
         name = request.form['Body']
@@ -93,7 +91,7 @@ def sms_reply():
         else:
             counter = 6
             session['counter'] = counter
-            resp.message('Input is invalid.Do you normally study on weekends or during weekdays? Reply 1 for weekends, 2 for weekdays')
+            resp.message('Input is invalid. Do you normally study on weekends or during weekdays? Reply 1 for weekends, 2 for weekdays')
             return str(resp)
         message = 'Which of the following best describe your study style? \n Reply 1 - Debugging Master  \n Reply 2 - Clubhouse Activists \n Reply 3 - Piazza Frontsitter \n Reply 4 - Visualization Guru'
         resp.message(message)
@@ -114,37 +112,61 @@ def sms_reply():
             resp.message('Input is invalid. Which of the following best describe your study style? \n Reply 1 - Debugging Master  \n Reply 2 - Clubhouse Activists \n Reply 3 - Piazza Frontsitter \n Reply 4 - Visualization Guru')
             return str(resp)
 
-        r = requests.post(url='http://localhost:5001/users/add', json=ppl_dict)
+        r = requests.post(url='http://host.docker.internal:5001/users/add', json=ppl_dict)
         print(r.status_code)
         print(r.reason)
         resp.message('Awesome! Send any text to continue and then please wait a moment for results')
 
 #display group choices or return a new group
     elif counter == 9:
-        reqURL = 'http://localhost:5001/groups/bestGroups/' + ppl_dict['_id']
+        reqURL = 'http://host.docker.internal:5001/groups/bestGroups/' + ppl_dict['_id']
         r = requests.get(url=reqURL)
 
-        # TODO: check if assigning global
         groups = r.json()
         if len(groups) == 0:
             newGroupData = {"members": [ppl_dict], "open": True, "sizeLimit": "3", "className": ppl_dict["selectedClass"]}
             print("got here")
-            r = requests.post(url='http://localhost:5001/groups/add', json=newGroupData)
+            r = requests.post(url='http://host.docker.internal:5001/groups/add', json=newGroupData)
             discordURL = r.json()['discordLink']
-            resp.message('Ok, we created a new channel for ya! Here is the url: ' + discordURL + 'Feel free to invite others to discuss the topic on your mind!')
+            resp.message('Unfortunately, we were unable to find any open study groups for your class. We created a new channel for you instead, here is the url: ' + discordURL + ' \n Feel free to invite others to discuss the topic on your mind!')
 
-        # TODO: format output strings displaying group choices
-        for i in range(len(groups)):
-            group = groups[i]
-            print(i)
-            print(group)
-        resp.message("1 2 3")
+        else:
+            msgStr = "\n"
+            for i in range(len(groups)):
+                group = groups[i]
+                members = group["members"]
+                groupNumStr = str(i+1)
+                msgStr = add_group(msgStr, groupNumStr)
+                for j in range(len(members)):
+                    member = members[j]
+                    memberNumStr = str(j+1)
+                    msgStr = add_member(msgStr, memberNumStr, member["name"], member["major"], member["year"], member["studyStyle"]) + "\n"
+
+            msgStr += "\n Reply the number for the group you'd like to join. e.g. "
+            for i in range(len(groups)):
+                msgStr += str(i+1)
+                if i != len(groups)-1:
+                    msgStr += " or "
+            resp.message(msgStr)
 
 #a group chosen
     elif counter == 10:
         groupChoice = request.form['Body']
         groupNum = int(groupChoice) - 1
-        urlID = 'http://localhost:5001/groups/addUser/' + groups[groupNum]['_id']
+
+        if groupNum >= len(groups) or groupNum < 0:
+            counter = 9
+            session['counter'] = counter
+
+            msgStr = "Input is invalid. Reply the number for the group you'd like to join. e.g. "
+            for i in range(len(groups)):
+                msgStr += str(i+1)
+                if i != len(groups)-1:
+                    msgStr += " or "
+            resp.message(msgStr)
+            return str(resp)
+
+        urlID = 'http://host.docker.internal:5001/groups/addUser/' + groups[groupNum]['_id']
         r = requests.put(url=urlID, json = {"user":ppl_dict})
         discordURL = r.json()['discordLink']
         resp.message("Done! You may now find your new group at " + discordURL )
