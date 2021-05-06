@@ -22,7 +22,7 @@ router.route("/add").post((req, res) => {
 
   getDiscord().then((data) => {
     discordLink = data.channel_invite;
-    discordID   = data.channel_id;
+    discordID = data.channel_id;
     console.log(discordLink);
 
     const newGroup = new Group({
@@ -35,7 +35,7 @@ router.route("/add").post((req, res) => {
 
     newGroup
       .save()
-      .then(() => res.send({discordLink: discordLink, discordID: discordID}))
+      .then(() => res.send({ discordLink: discordLink, discordID: discordID }))
       .catch((err) => res.status(400).json("Error: " + err));
   });
 });
@@ -52,7 +52,7 @@ router.route("/addWithoutLink").post((req, res) => {
     open,
     sizeLimit,
     className,
-    discordLink
+    discordLink,
   });
 
   newGroup
@@ -96,7 +96,7 @@ router.route("/addUser/:id").put((req, res) => {
   Group.findById(req.params.id)
     .then((group) => {
       if (group.open == false) {
-        res.json("Sorry, this group is full.")
+        res.json("Sorry, this group is full.");
       } else {
         if (group.open) {
           group.members.push(req.body.user);
@@ -105,9 +105,9 @@ router.route("/addUser/:id").put((req, res) => {
           group.open = false;
         }
         group
-        .save()
-        .then(() => res.json({discordLink: group.discordLink}))
-        .catch((err) => res.status(400).json("Error: " + err));
+          .save()
+          .then(() => res.json({ discordLink: group.discordLink }))
+          .catch((err) => res.status(400).json("Error: " + err));
       }
     })
     .catch((err) => res.status(400).json("Error: " + err));
@@ -123,7 +123,10 @@ router.route("/:id").delete((req, res) => {
 // Best groups
 router.route("/bestGroups/:id").get(async (req, res) => {
   const user = await User.findById(req.params.id);
-  const groups = await Group.find({ className: user.selectedClass, open: true });
+  const groups = await Group.find({
+    className: user.selectedClass,
+    open: true,
+  });
 
   let groupData = [];
   groups.forEach((group) => {
@@ -158,12 +161,12 @@ router.route("/bestGroups/:id").get(async (req, res) => {
   let ranks = {};
   let w = { 1: 3, 2: 1, 3: 1, 4: 1, 5: 1 };
   let yearToInt = {
-    "freshman": 1,
-    "sophomore": 2,
-    "junior": 3,
-    "senior": 4,
+    freshman: 1,
+    sophomore: 2,
+    junior: 3,
+    senior: 4,
     "master's": 5,
-    "phd": 6,
+    phd: 6,
   };
   groupData.forEach((group) => {
     let [
@@ -176,9 +179,6 @@ router.route("/bestGroups/:id").get(async (req, res) => {
 
     yearNums = group.years.map((x) => yearToInt[x]);
     let avgYear = Object.values(yearNums).reduce((a, b) => a + b) / 2;
-    // console.log(yearNums);
-    // console.log(avgYear);
-    // console.log(yearToInt[user.year]);
 
     if (Math.abs(avgYear - yearToInt[user.year]) <= 1) {
       yearFeature = 1;
@@ -203,20 +203,49 @@ router.route("/bestGroups/:id").get(async (req, res) => {
       w[4] * studyTimesFeature +
       w[5] * studyStyleFeature;
     ranks[group._id] = score;
+
+    console.log(group);
+    console.log(score);
   });
 
-  rankedGroupKeys = Object.keys(ranks).sort().reverse();
+  console.log(ranks);
+
+  // rankedGroupKeys = Object.keys(ranks).sort(function (a, b) {
+  //   return a.age - b.age;
+  // });
+
+  var sortable = [];
+  for (var r in ranks) {
+    sortable.push([r, ranks[r]]);
+  }
+  sortable.sort(function (a, b) {
+    return b[1] - a[1];
+  });
+
+  console.log(`sortable: ${sortable}`);
 
   bestGroups = [];
-  rankedGroupKeys.forEach((id) => {
+  sortable.forEach((pair) => {
     groups.forEach((group) => {
-      if (group._id == id) {
+      if (group._id == pair[0]) {
         bestGroups.push(group);
       }
     });
   });
 
+  console.log(bestGroups);
+
   res.json(bestGroups);
 });
+
+// router.route("/test").get(async (req, res) => {
+//   const ids = req.body.ids;
+//   users = [];
+//   for (let i = 0; i < ids.length; i++) {
+//     const userData = await User.findById(ids[i]);
+//     users.push(userData);
+//   }
+//   res.json(users);
+// });
 
 module.exports = router;
