@@ -196,23 +196,10 @@ router.route("/bestGroups/:id").get(async (req, res) => {
       studyStyleFeature = 1;
     }
 
-    let score =
-      w[1] * yearFeature +
-      w[2] * majorFeature +
-      w[3] * meetingTimesFeature +
-      w[4] * studyTimesFeature +
-      w[5] * studyStyleFeature;
+    let score = w[1] * yearFeature + w[2] * majorFeature + w[3] * meetingTimesFeature + w[4] * studyTimesFeature + w[5] * studyStyleFeature;
     ranks[group._id] = score;
 
-    console.log(group);
-    console.log(score);
   });
-
-  console.log(ranks);
-
-  // rankedGroupKeys = Object.keys(ranks).sort(function (a, b) {
-  //   return a.age - b.age;
-  // });
 
   var sortable = [];
   for (var r in ranks) {
@@ -222,8 +209,6 @@ router.route("/bestGroups/:id").get(async (req, res) => {
     return b[1] - a[1];
   });
 
-  console.log(`sortable: ${sortable}`);
-
   bestGroups = [];
   sortable.forEach((pair) => {
     groups.forEach((group) => {
@@ -232,8 +217,6 @@ router.route("/bestGroups/:id").get(async (req, res) => {
       }
     });
   });
-
-  console.log(bestGroups);
 
   res.json(bestGroups);
 });
