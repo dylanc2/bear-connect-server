@@ -218,7 +218,7 @@ router.route("/bestGroups/:id").get(async (req, res) => {
     });
   });
 
-  res.json(bestGroups);
+  res.json(bestGroups.slice(1, 3));
 });
 
 // router.route("/test").get(async (req, res) => {
